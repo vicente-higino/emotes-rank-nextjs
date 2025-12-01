@@ -1,7 +1,4 @@
-"use client";
-// =======================
-// Types
-// =======================
+import { DateRange, TZDate } from "react-day-picker";
 
 export interface EmotesRequest {
   data: Emote[];
@@ -29,19 +26,18 @@ export interface Meta {
 // =======================
 // Constants
 // =======================
-export const EmoteProvider = {
-  Twitch: "Twitch",
-  BTTV: "BTTV",
-  FFZ: "FFZ",
-  SevenTV: "SevenTV",
-} as const;
+export const EmoteProvider = { Twitch: "Twitch", BTTV: "BTTV", FFZ: "FFZ", SevenTV: "SevenTV" } as const;
 
 export type EmoteProviderT = keyof typeof EmoteProvider;
+export const enabledChannels = ["fuslie", "fukura____", "v_cn_t"] as const;
+export type enabledChannel = keyof typeof enabledChannels;
+export function getChannels() {
+  return enabledChannels;
+}
 
 export const ProviderColor = { Twitch: "purple", BTTV: "red", FFZ: "brown", SevenTV: "blue" } as const;
 const DEFAULT_USER_ID = "fuslie";
-// const HOST = 'http://localhost:8000';
-const HOST = "https://adventures-cloudflare.vi-higino.workers.dev";
+const HOST = process.env.NEXT_PUBLIC_API_URL;
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 // =======================
 // Utility Functions
@@ -115,18 +111,29 @@ export function parseProviders(args: string[]): EmoteProviderT[] {
   return providers.length ? providers : [];
 }
 
-export function normalizeDateRange(from?: Date, to?: Date) {
+export function normalizeDateRange(from?: Date | string | null, to?: Date | string | null) {
   if (!from || !to) {
     return { from: null, to: null };
   }
-  const start = new Date(from);
-  start.setHours(0, 0, 0, 0);
+  const start = new TZDate(new Date(from), "UTC");
+  start.setUTCHours(0, 0, 0, 0);
 
-  const end = new Date(to);
-  end.setHours(23, 59, 59, 999);
+  const end = new TZDate(new Date(to), "UTC");
+  end.setUTCHours(23, 59, 59, 999);
 
-  return {
-    from: start.toISOString(),
-    to: end.toISOString(),
-  };
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
+export function toDateRange({ from, to }: { from: string | null; to: string | null }): DateRange | undefined {
+  if (!from && !to) {
+    return undefined;
+  }
+  const range: DateRange = { from: undefined };
+  if (from) {
+    range.from = new TZDate(from, "UTC");
+  }
+  if (to) {
+    range.to = new TZDate(to, "UTC");
+  }
+  return range;
 }
