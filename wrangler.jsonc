@@ -3,6 +3,9 @@
     "main": ".open-next/worker.js",
     "name": "emotes-rank",
     "compatibility_date": "2025-09-01",
+    "placement": {
+        "mode": "smart"
+    },
     "observability": {
         "enabled": true,
         "logs": {
