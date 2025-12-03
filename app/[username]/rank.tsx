@@ -21,7 +21,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import NextLink from "next/link";
-import { useEffect, useMemo, useReducer } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { Column, DataGrid, SortColumn } from "react-data-grid";
 import "react-data-grid/lib/styles.css";
 import { type DateRange, DayPicker } from "react-day-picker";
@@ -75,6 +75,7 @@ export type State = {
   providerFilter: string[];
   dateRangeSelectionDiaglogOpen: boolean;
   onlyCurrentEmotes: boolean;
+  enableVirt: boolean;
 };
 
 export type Action =
@@ -106,7 +107,7 @@ function reducer(state: State, action: Action): State {
     case "SET_PAGE":
       return { ...newState, page: action.page };
     case "SET_PER_PAGE":
-      return { ...newState, perPage: action.perPage };
+      return { ...newState, perPage: action.perPage, enableVirt: parseInt(action.perPage) > 100 };
     case "SET_TOTAL_PAGES":
       return { ...newState, totalPages: action.total };
     case "SET_SELECTED_RANGE":
@@ -308,6 +309,7 @@ export default function RankPage() {
           style={{ minHeight: "100vh" }}
           sortColumns={state.sortColumns}
           rowHeight={40}
+          enableVirtualization={state.enableVirt}
           onSortColumnsChange={cols => dispatch({ type: "SET_SORT", sort: cols })}
           renderers={{ noRowsFallback: <EmptyRowsRenderer /> }}
         />

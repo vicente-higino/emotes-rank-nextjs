@@ -54,6 +54,7 @@ export function getDefaultState(searchParams: ReadonlyURLSearchParams | URLSearc
       : Object.values(EmoteProvider).toSorted(),
     dateRangeSelectionDiaglogOpen: false,
     onlyCurrentEmotes: !!searchParams.get("onlyCurrentEmotes"),
+    enableVirt: false,
   };
   return state;
 }
