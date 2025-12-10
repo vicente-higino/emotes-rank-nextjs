@@ -185,6 +185,7 @@ export default function RankPage() {
     if (emoteNameFilterDebounce) {
       const options = {
         useExtendedSearch: true,
+        shouldSort: false,
         threshold: 0.3,
         keys: ['emoteName', "rank", "provider"]
       }
@@ -328,7 +329,6 @@ export default function RankPage() {
           style={{ minHeight: "100vh" }}
           sortColumns={state.sortColumns}
           rowHeight={40}
-          enableVirtualization={state.enableVirt}
           onSortColumnsChange={cols => dispatch({ type: "SET_SORT", sort: cols })}
           renderers={{ noRowsFallback: <EmptyRowsRenderer /> }}
         />
