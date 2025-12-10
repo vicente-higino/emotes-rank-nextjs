@@ -28,7 +28,7 @@ export interface Meta {
 // =======================
 export const EmoteProvider = { Twitch: "Twitch", BTTV: "BTTV", FFZ: "FFZ", SevenTV: "SevenTV" } as const;
 
-export type EmoteProviderT = keyof typeof EmoteProvider;
+export type EmoteProviders = keyof typeof EmoteProvider;
 export const enabledChannels = ["fuslie", "fukura____", "v_cn_t"] as const;
 export type enabledChannel = keyof typeof enabledChannels;
 export function getChannels() {
@@ -91,7 +91,7 @@ export function getEmotePageUrl(provider: string | null, emoteId: string | null)
   }
   return null;
 }
-const providerAliases: Record<string, EmoteProviderT> = {
+const providerAliases: Record<string, EmoteProviders> = {
   twitch: EmoteProvider.Twitch,
   bttv: EmoteProvider.BTTV,
   ffz: EmoteProvider.FFZ,
@@ -99,9 +99,9 @@ const providerAliases: Record<string, EmoteProviderT> = {
   seventv: EmoteProvider.SevenTV,
 };
 
-export function parseProviders(args: string[]): EmoteProviderT[] {
+export function parseProviders(args: string[]): EmoteProviders[] {
   if (!args.length) return [];
-  const providers: EmoteProviderT[] = [];
+  const providers: EmoteProviders[] = [];
   for (const arg of args) {
     const key = arg.toLowerCase();
     if (providerAliases[key]) {

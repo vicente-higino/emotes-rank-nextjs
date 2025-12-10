@@ -7,28 +7,26 @@ import {
   Dialog,
   Flex,
   Grid,
-  Heading,
   IconButton,
   Link,
   Section,
   Select,
   Spinner,
   Switch,
-  TabNav,
   Text,
   TextField,
 } from "@radix-ui/themes";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
-import { ReadonlyURLSearchParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import NextLink from "next/link";
+import { ReadonlyURLSearchParams, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { Column, DataGrid, SortColumn } from "react-data-grid";
 import "react-data-grid/lib/styles.css";
 import { type DateRange, DayPicker } from "react-day-picker";
 import { Image } from "../componets/Image";
-import { Emote, EmoteProvider, getChannels, getEmotePageUrl, getEmotes, getEmoteUrl, normalizeDateRange, parseProviders, ProviderColor, toDateRange } from "../util";
+import { Emote, EmoteProvider, getEmotePageUrl, getEmotes, getEmoteUrl, normalizeDateRange, parseProviders, ProviderColor, toDateRange } from "../util";
 import Fuse from 'fuse.js'
+import ProviderIcon from "../componets/ProviderIcon";
 
 const columns: readonly Column<Emote>[] = [
   { key: "rank", name: "Rank", width: 60, sortable: true },
@@ -55,7 +53,7 @@ const columns: readonly Column<Emote>[] = [
           size={"4"}
           weight={"bold"}
           title={`Open ${row.provider} emote page`}>
-          {row.provider}
+          <ProviderIcon fallback={row.provider} provider={row.provider} size={'2'} />
         </Link>
       );
     },
@@ -227,8 +225,8 @@ export default function RankPage() {
             onValueChange={v => dispatch({ type: "SET_PROVIDER_FILTER", providers: v })}
             style={{ flexDirection: "row" }}>
             {Object.values(EmoteProvider).map(p => (
-              <CheckboxGroup.Item key={p} value={p} disabled={state.onlyCurrentEmotes && p === EmoteProvider.Twitch}>
-                {p}
+              <CheckboxGroup.Item key={p} value={p} disabled={state.onlyCurrentEmotes && p === EmoteProvider.Twitch} className="items-center">
+                <ProviderIcon provider={p} fallback={p} />
               </CheckboxGroup.Item>
             ))}
           </CheckboxGroup.Root>
