@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, DoubleArrowLeftIcon, DoubleArrowRightIcon } from "@radix-ui/react-icons";
+import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, DoubleArrowLeftIcon, DoubleArrowRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import {
   Button,
   CheckboxGroup,
@@ -16,18 +16,19 @@ import {
   Switch,
   TabNav,
   Text,
+  TextField,
 } from "@radix-ui/themes";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ReadonlyURLSearchParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import NextLink from "next/link";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { Column, DataGrid, SortColumn } from "react-data-grid";
 import "react-data-grid/lib/styles.css";
 import { type DateRange, DayPicker } from "react-day-picker";
 import { Image } from "../componets/Image";
-import { fetchRank, getDefaultState } from "./page";
-import { Emote, EmoteProvider, getChannels, getEmotePageUrl, normalizeDateRange, ProviderColor } from "../util";
+import { Emote, EmoteProvider, getChannels, getEmotePageUrl, getEmotes, getEmoteUrl, normalizeDateRange, parseProviders, ProviderColor, toDateRange } from "../util";
+import Fuse from 'fuse.js'
 
 const columns: readonly Column<Emote>[] = [
   { key: "rank", name: "Rank", width: 60, sortable: true },
@@ -146,6 +147,8 @@ export default function RankPage() {
   const [state, dispatch] = useReducer(reducer, getDefaultState(searchParams, channel));
   const queryFilter = useDebounce(state, 1000);
   const getRows = fetchRank(searchParams, state, dispatch);
+  const [emoteNameFilter, setEmoteNameFilter] = useState<string | undefined>();
+  const emoteNameFilterDebounce = useDebounce(emoteNameFilter, 250);
 
   const { isLoading, isError, data, error, refetch } = useQuery({
     queryKey: [
@@ -168,9 +171,9 @@ export default function RankPage() {
 
   const sortedRows = useMemo(() => {
     if (!data?.data) return [];
-    if (state.sortColumns.length === 0 && state.providerFilter.length === 4) return data.data;
+    if (state.sortColumns.length === 0 && state.providerFilter.length === 4 && !emoteNameFilterDebounce?.length) return data.data;
 
-    return data.data
+    const rows = data.data
       .toSorted((a, b) => {
         for (const sort of state.sortColumns) {
           const comp = a.rank - b.rank;
@@ -178,8 +181,21 @@ export default function RankPage() {
         }
         return 0;
       })
-      .filter(e => state.providerFilter.includes(e.provider));
-  }, [data, state.sortColumns, state.providerFilter]);
+      .filter(e => state.providerFilter.includes(e.provider))
+    if (emoteNameFilterDebounce) {
+      const options = {
+        useExtendedSearch: true,
+        threshold: 0.3,
+        keys: ['emoteName', "rank", "provider"]
+      }
+      const fuse = new Fuse(rows, options)
+      const filter = fuse.search(emoteNameFilterDebounce)
+      return filter.map(e => e.item)
+    }
+
+    return rows
+
+  }, [data, state.sortColumns, state.providerFilter, emoteNameFilterDebounce]);
 
   const EmptyRowsRenderer = () => {
     return (
@@ -273,7 +289,11 @@ export default function RankPage() {
               Only Active Emotes
             </Text>
           </Flex>
-
+          <TextField.Root placeholder="Filter emotes…" value={emoteNameFilter} onChange={(e) => setEmoteNameFilter(e.currentTarget.value)} className="w-full max-w-sm">
+            <TextField.Slot>
+              <MagnifyingGlassIcon height="16" width="16" />
+            </TextField.Slot>
+          </TextField.Root>
           <Flex gap={"5"} align={"center"}>
             <IconButton disabled={state.page === 1 || isLoading} onClick={() => dispatch({ type: "SET_PAGE", page: 1 })} variant="ghost">
               <DoubleArrowLeftIcon />
@@ -301,7 +321,6 @@ export default function RankPage() {
           </Flex>
         </Flex>
       </Section>
-
       <div className="w-full">
         <DataGrid
           columns={columns}
@@ -316,4 +335,61 @@ export default function RankPage() {
       </div>
     </>
   );
+}
+
+
+export function fetchRank(searchParams: ReadonlyURLSearchParams | URLSearchParams, state: State, dispatch: (action: Action) => void) {
+  return async () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("perPage", state.perPage);
+    params.set("page", state.page.toString());
+    if (state.providerFilter.length !== Object.values(EmoteProvider).length) {
+      params.set("providers", state.providerFilter.join(","));
+    }
+    if (state.filterDateRange.from) {
+      params.set("from", state.filterDateRange.from);
+    }
+    if (state.filterDateRange.to) {
+      params.set("to", state.filterDateRange.to);
+    }
+    if (state.onlyCurrentEmotes) {
+      params.set("onlyCurrentEmotes", "true");
+    }
+
+    const data = await getEmotes(state.channel, params.toString());
+    for (const emote of data.data) {
+      emote.imageUrl = getEmoteUrl(emote.provider, emote.emoteId);
+    }
+
+    let page = data.meta?.page ?? 1;
+    const total = data.meta?.totalPages ?? 1;
+    if (page > total) {
+      page = total;
+    }
+
+    dispatch({ type: "SET_PAGE", page });
+    dispatch({ type: "SET_TOTAL_PAGES", total });
+    dispatch({ type: "RESET_CHANGED" });
+    return data;
+  };
+}
+export function getDefaultState(searchParams: ReadonlyURLSearchParams | URLSearchParams, channel?: string): State {
+  const state = {
+    rows: [],
+    sortColumns: [],
+    channel: channel ?? "fuslie",
+    page: searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1,
+    perPage: "100",
+    totalPages: 1,
+    dateRangeSelection: toDateRange(normalizeDateRange(searchParams.get("from"), searchParams.get("to"))) ?? undefined,
+    filterDateRange: normalizeDateRange(searchParams.get("from"), searchParams.get("to")),
+    month: undefined,
+    providerFilter: searchParams.get("providers")
+      ? parseProviders(searchParams.get("providers")!.split(",")).toSorted()
+      : Object.values(EmoteProvider).toSorted(),
+    dateRangeSelectionDiaglogOpen: false,
+    onlyCurrentEmotes: !!searchParams.get("onlyCurrentEmotes"),
+    enableVirt: false,
+  };
+  return state;
 }

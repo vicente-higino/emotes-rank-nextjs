@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import "@radix-ui/themes/styles.css";
 import "react-day-picker/style.css";
 import "./globals.css";
-import { Link, TabNav, Text, Theme } from "@radix-ui/themes";
-import NextLink from "next/link";
+import { Link, Text, Theme } from "@radix-ui/themes";
 import React, { Suspense } from "react";
 import Providers from "./providers";
-import { getChannels } from "./util";
 import Header from "./header";
 
-export const metadata: Metadata = { title: "Emotes Rank" };
+export const metadata: Metadata = {
+  title: {
+    template: 'Emotes Rank - %s',
+    default: 'Emotes Rank',
+  }
+};
 export default async function RootLayout({ children, params }: LayoutProps<"/">) {
   return (
     <html lang="en" data-theme="dark" className="scheme-dark">
