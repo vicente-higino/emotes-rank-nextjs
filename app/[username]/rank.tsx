@@ -1,26 +1,29 @@
 "use client";
 
 import ProviderIcon from "@/app/components/ProviderIcon";
-import { Emote, EmoteProvider, getEmotePageUrl, getEmotes, getEmoteUrl, normalizeDateRange, parseProviders, ProviderColor, toDateRange } from "@/app/util";
-import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, DoubleArrowLeftIcon, DoubleArrowRightIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import {
-  Button,
-  CheckboxGroup,
-  Dialog,
-  Flex,
-  Grid,
-  IconButton,
-  Link,
-  Section,
-  Select,
-  Spinner,
-  Switch,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+  Emote,
+  EmoteProvider,
+  getEmotePageUrl,
+  getEmotes,
+  getEmoteUrl,
+  normalizeDateRange,
+  parseProviders,
+  ProviderColor,
+  toDateRange,
+} from "@/app/util";
+import {
+  CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DoubleArrowLeftIcon,
+  DoubleArrowRightIcon,
+  MagnifyingGlassIcon,
+} from "@radix-ui/react-icons";
+import { Button, CheckboxGroup, Dialog, Flex, Grid, IconButton, Link, Section, Select, Spinner, Switch, Text, TextField } from "@radix-ui/themes";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
-import Fuse from 'fuse.js';
+import Fuse from "fuse.js";
 import { ReadonlyURLSearchParams, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { Column, DataGrid, SortColumn } from "react-data-grid";
@@ -53,7 +56,7 @@ const columns: readonly Column<Emote>[] = [
           size={"4"}
           weight={"bold"}
           title={`Open ${row.provider} emote page`}>
-          <ProviderIcon fallback={row.provider} provider={row.provider} size={'2'} />
+          <ProviderIcon fallback={row.provider} provider={row.provider} size={"2"} />
         </Link>
       );
     },
@@ -179,21 +182,15 @@ export default function RankPage() {
         }
         return 0;
       })
-      .filter(e => state.providerFilter.includes(e.provider))
+      .filter(e => state.providerFilter.includes(e.provider));
     if (emoteNameFilterDebounce) {
-      const options = {
-        useExtendedSearch: true,
-        shouldSort: false,
-        threshold: 0.3,
-        keys: ['emoteName', "rank", "provider"]
-      }
-      const fuse = new Fuse(rows, options)
-      const filter = fuse.search(emoteNameFilterDebounce)
-      return filter.map(e => e.item)
+      const options = { useExtendedSearch: true, shouldSort: false, threshold: 0.3, keys: ["emoteName", "rank", "provider"] };
+      const fuse = new Fuse(rows, options);
+      const filter = fuse.search(emoteNameFilterDebounce);
+      return filter.map(e => e.item);
     }
 
-    return rows
-
+    return rows;
   }, [data, state.sortColumns, state.providerFilter, emoteNameFilterDebounce]);
 
   const EmptyRowsRenderer = () => {
@@ -288,7 +285,11 @@ export default function RankPage() {
               Only Active Emotes
             </Text>
           </Flex>
-          <TextField.Root placeholder="Filter emotes…" value={emoteNameFilter} onChange={(e) => setEmoteNameFilter(e.currentTarget.value)} className="w-full max-w-sm">
+          <TextField.Root
+            placeholder="Filter emotes…"
+            value={emoteNameFilter}
+            onChange={e => setEmoteNameFilter(e.currentTarget.value)}
+            className="w-full max-w-sm">
             <TextField.Slot>
               <MagnifyingGlassIcon height="16" width="16" />
             </TextField.Slot>
@@ -334,7 +335,6 @@ export default function RankPage() {
     </>
   );
 }
-
 
 export function fetchRank(searchParams: ReadonlyURLSearchParams | URLSearchParams, state: State, dispatch: (action: Action) => void) {
   return async () => {

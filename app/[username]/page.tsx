@@ -7,16 +7,11 @@ export async function generateStaticParams() {
   return enabledChannels.map(username => ({ username }));
 }
 
-export async function generateMetadata(
-  { params, searchParams }: PageProps<"/[username]">,
-  parent: ResolvingMetadata
-): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps<"/[username]">, parent: ResolvingMetadata): Promise<Metadata> {
   // read route params
-  const { username } = await params
+  const { username } = await params;
 
-  return {
-    title: username,
-  }
+  return { title: username };
 }
 
 export const dynamicParams = false;

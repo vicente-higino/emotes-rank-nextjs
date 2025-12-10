@@ -7,12 +7,7 @@ import React, { Suspense } from "react";
 import Providers from "./providers";
 import Header from "./header";
 
-export const metadata: Metadata = {
-  title: {
-    template: 'Emotes Rank - %s',
-    default: 'Emotes Rank',
-  }
-};
+export const metadata: Metadata = { title: { template: "Emotes Rank - %s", default: "Emotes Rank" } };
 export default async function RootLayout({ children, params }: LayoutProps<"/">) {
   return (
     <html lang="en" data-theme="dark" className="scheme-dark">
