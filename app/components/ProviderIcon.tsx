@@ -1,5 +1,5 @@
 import { AvatarProps, Flex, Avatar } from "@radix-ui/themes";
-import { EmoteProviders } from "../util";
+import { EmoteProviders } from "@/app/util";
 
 function getProviderIcon(provider: EmoteProviders): string {
     switch (provider) {

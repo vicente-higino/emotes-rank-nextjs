@@ -1,5 +1,5 @@
 import Rank from "./rank";
-import { enabledChannels } from "../util";
+import { enabledChannels } from "@/app/util";
 import { Suspense } from "react";
 import { Metadata, ResolvingMetadata } from "next";
 
