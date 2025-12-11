@@ -61,7 +61,7 @@ const columns: readonly Column<Emote>[] = [
       );
     },
   },
-  { key: "usage_count", name: "Usage Count", resizable: true, sortable: true },
+  { key: "usage_count", name: "Count", resizable: true, sortable: true },
 ];
 
 export type State = {
@@ -78,6 +78,7 @@ export type State = {
   dateRangeSelectionDiaglogOpen: boolean;
   onlyCurrentEmotes: boolean;
   enableVirt: boolean;
+  isGroupById: boolean;
 };
 
 export type Action =
@@ -93,6 +94,7 @@ export type Action =
   | { type: "SET_PROVIDER_FILTER"; providers: string[] }
   | { type: "SET_OPEN"; open: boolean }
   | { type: "SET_ONLY_CURRENT"; value: boolean }
+  | { type: "SET_IS_GROUP_BY_ID"; value: boolean }
   | { type: "RESET_CHANGED" };
 
 function reducer(state: State, action: Action): State {
@@ -118,6 +120,8 @@ function reducer(state: State, action: Action): State {
       return { ...newState, month: action.month };
     case "SET_PROVIDER_FILTER":
       return { ...newState, providerFilter: action.providers.toSorted() };
+    case "SET_IS_GROUP_BY_ID":
+      return { ...newState, isGroupById: action.value };
     case "SET_OPEN":
       return {
         ...newState,
@@ -159,6 +163,7 @@ export default function RankPage() {
       state.perPage,
       state.filterDateRange?.from,
       state.filterDateRange?.to,
+      state.isGroupById,
       queryFilter.onlyCurrentEmotes,
       ...queryFilter.providerFilter,
     ],
@@ -228,7 +233,7 @@ export default function RankPage() {
             ))}
           </CheckboxGroup.Root>
 
-          <Flex gap={"2"} align={"center"} className="flex-col-reverse md:flex-row">
+          <Flex gap={"2"} align={"stretch"} className="flex-col-reverse md:flex-row">
             <Dialog.Root open={state.dateRangeSelectionDiaglogOpen} onOpenChange={v => dispatch({ type: "SET_OPEN", open: v })}>
               <Dialog.Trigger>
                 <Button disabled={isLoading}>
@@ -263,18 +268,6 @@ export default function RankPage() {
                 </Flex>
               </Dialog.Content>
             </Dialog.Root>
-            <Select.Root
-              disabled={isLoading}
-              defaultValue="100"
-              value={state.perPage}
-              onValueChange={v => dispatch({ type: "SET_PER_PAGE", perPage: v })}>
-              <Select.Trigger />
-              <Select.Content>
-                <Select.Item value="10">10</Select.Item>
-                <Select.Item value="100">100</Select.Item>
-                <Select.Item value="1000">1000</Select.Item>
-              </Select.Content>
-            </Select.Root>
             <Text as="label" size="3" className="md:order-last">
               <Switch
                 disabled={isLoading}
@@ -282,7 +275,16 @@ export default function RankPage() {
                 onCheckedChange={v => dispatch({ type: "SET_ONLY_CURRENT", value: v })}
                 mr={"2"}
               />
-              Only Active Emotes
+              Active Emotes
+            </Text>
+            <Text as="label" size="3" className="md:order-last">
+              <Switch
+                disabled={isLoading}
+                checked={!state.isGroupById}
+                onCheckedChange={v => dispatch({ type: "SET_IS_GROUP_BY_ID", value: !v })}
+                mr={"2"}
+              />
+              Combine Emotes
             </Text>
           </Flex>
           <TextField.Root
@@ -318,6 +320,18 @@ export default function RankPage() {
               variant="ghost">
               <DoubleArrowRightIcon />
             </IconButton>
+            <Select.Root
+              disabled={isLoading}
+              defaultValue="100"
+              value={state.perPage}
+              onValueChange={v => dispatch({ type: "SET_PER_PAGE", perPage: v })}>
+              <Select.Trigger variant="ghost" radius="large" />
+              <Select.Content>
+                <Select.Item value="10">10</Select.Item>
+                <Select.Item value="100">100</Select.Item>
+                <Select.Item value="1000">1000</Select.Item>
+              </Select.Content>
+            </Select.Root>
           </Flex>
         </Flex>
       </Section>
@@ -350,6 +364,9 @@ export function fetchRank(searchParams: ReadonlyURLSearchParams | URLSearchParam
     }
     if (state.onlyCurrentEmotes) {
       params.set("onlyCurrentEmotes", "true");
+    }
+    if (!state.isGroupById) {
+      params.set("groupBy", "name");
     }
 
     const data = await getEmotes(state.channel, params.toString());
@@ -385,6 +402,7 @@ export function getDefaultState(searchParams: ReadonlyURLSearchParams | URLSearc
       : Object.values(EmoteProvider).toSorted(),
     dateRangeSelectionDiaglogOpen: false,
     onlyCurrentEmotes: !!searchParams.get("onlyCurrentEmotes"),
+    isGroupById: true,
     enableVirt: false,
   };
   return state;
