@@ -213,14 +213,14 @@ export default function RankPage() {
   };
 
   return (
-    <>
+    <div className="w-full">
       <Section size={"1"}>
         <Flex direction={"column"} gap={"3"} align={"center"}>
           <CheckboxGroup.Root
             disabled={isLoading}
             value={state.providerFilter}
             onValueChange={v => dispatch({ type: "SET_PROVIDER_FILTER", providers: v })}
-            style={{ flexDirection: "row" }}>
+            className="flex-row! flex-wrap">
             {Object.values(EmoteProvider).map(p => (
               <CheckboxGroup.Item key={p} value={p} disabled={state.onlyCurrentEmotes && p === EmoteProvider.Twitch} className="items-center">
                 <ProviderIcon provider={p} fallback={p} />
@@ -321,18 +321,16 @@ export default function RankPage() {
           </Flex>
         </Flex>
       </Section>
-      <div className="w-full">
-        <DataGrid
-          columns={columns}
-          rows={sortedRows}
-          style={{ minHeight: "100vh" }}
-          sortColumns={state.sortColumns}
-          rowHeight={40}
-          onSortColumnsChange={cols => dispatch({ type: "SET_SORT", sort: cols })}
-          renderers={{ noRowsFallback: <EmptyRowsRenderer /> }}
-        />
-      </div>
-    </>
+      <DataGrid
+        columns={columns}
+        rows={sortedRows}
+        style={{ minHeight: "100vh" }}
+        sortColumns={state.sortColumns}
+        rowHeight={40}
+        onSortColumnsChange={cols => dispatch({ type: "SET_SORT", sort: cols })}
+        renderers={{ noRowsFallback: <EmptyRowsRenderer /> }}
+      />
+    </div>
   );
 }
 
