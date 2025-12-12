@@ -126,7 +126,9 @@ function reducer(state: State, action: Action): State {
     case "SET_OPEN":
       return {
         ...newState,
-        filterDateRange: action.open ? state.filterDateRange : normalizeDateRange(state.dateRangeSelection?.from ?? null, state.dateRangeSelection?.to ?? null),
+        filterDateRange: action.open
+          ? state.filterDateRange
+          : normalizeDateRange(state.dateRangeSelection?.from ?? null, state.dateRangeSelection?.to ?? null),
         dateRangeSelectionDiaglogOpen: action.open,
       };
     case "SET_ONLY_CURRENT":
@@ -251,7 +253,7 @@ export default function RankPage() {
               </Dialog.Trigger>
               <Dialog.Content width="fit-content">
                 <Dialog.Title>Select Range</Dialog.Title>
-                <Flex gap={'2'} align="center" className="flex-col! sm:flex-row!">
+                <Flex gap={"2"} align="center" className="flex-col! sm:flex-row!">
                   <DayPicker
                     mode="range"
                     reverseYears
@@ -265,16 +267,34 @@ export default function RankPage() {
                     disabled={isLoading}
                     showOutsideDays
                   />
-                  <Flex wrap={"wrap"} gap={'1'} className="flex-row! sm:flex-col!" align={'end'} >
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_7_days") })}>Last 7 Days</Button>
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_30_days") })}>Last 30 Days</Button>
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_week") })}>This Week</Button>
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_month") })}>This Month</Button>
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_year") })}>This Year</Button>
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_week") })}>Last Week</Button>
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_month") })}>Last Month</Button>
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_year") })}>Last Year</Button>
-                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: undefined })}>Clear</Button>
+                  <Flex wrap={"wrap"} gap={"1"} className="flex-row! sm:flex-col!" align={"end"}>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_7_days") })}>
+                      Last 7 Days
+                    </Button>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_30_days") })}>
+                      Last 30 Days
+                    </Button>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_week") })}>
+                      This Week
+                    </Button>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_month") })}>
+                      This Month
+                    </Button>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_year") })}>
+                      This Year
+                    </Button>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_week") })}>
+                      Last Week
+                    </Button>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_month") })}>
+                      Last Month
+                    </Button>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_year") })}>
+                      Last Year
+                    </Button>
+                    <Button variant="outline" radius="full" onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: undefined })}>
+                      Clear
+                    </Button>
                   </Flex>
                 </Flex>
               </Dialog.Content>
@@ -398,7 +418,7 @@ function fetchRank(searchParams: ReadonlyURLSearchParams | URLSearchParams, stat
   };
 }
 function getDefaultState(searchParams: ReadonlyURLSearchParams | URLSearchParams, channel?: string): State {
-  const range = getRange("last_7_days")
+  const range = getRange("last_7_days");
   const state = {
     rows: [],
     sortColumns: [],

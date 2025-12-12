@@ -1,5 +1,18 @@
 import { DateRange, TZDate } from "react-day-picker";
-import { endOfDay, endOfMonth, endOfWeek, endOfYear, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays, subMonths, subWeeks, subYears } from "date-fns";
+import {
+  endOfDay,
+  endOfMonth,
+  endOfWeek,
+  endOfYear,
+  startOfDay,
+  startOfMonth,
+  startOfWeek,
+  startOfYear,
+  subDays,
+  subMonths,
+  subWeeks,
+  subYears,
+} from "date-fns";
 export interface EmotesRequest {
   data: Emote[];
   meta: Meta | null;
@@ -112,7 +125,7 @@ export function parseProviders(args: string[]): EmoteProviders[] {
 }
 
 export function normalizeDateRange(from: Date | string | null, to: Date | string | null, days: number = 7) {
-  if (!from && !to) return { from: null, to: null }
+  if (!from && !to) return { from: null, to: null };
   if (!from) {
     from = new TZDate(subDays(new Date(), days));
   }
@@ -139,7 +152,6 @@ export function toDateRange({ from, to }: { from: string | null; to: string | nu
   return range;
 }
 
-
 export type DateRangeType =
   | "today"
   | "yesterday"
@@ -152,81 +164,48 @@ export type DateRangeType =
   | "this_year"
   | "last_year";
 
-type Range = {
-  from: Date;
-  to: Date;
-}
+type Range = { from: Date; to: Date };
 
 export function getRange(type: DateRangeType): Range {
   const now = new TZDate(new Date(), "UTC");
 
   switch (type) {
     case "today":
-      return {
-        from: startOfDay(now),
-        to: endOfDay(now),
-      };
+      return { from: startOfDay(now), to: endOfDay(now) };
 
     case "yesterday": {
       const d = subDays(now, 1);
-      return {
-        from: startOfDay(d),
-        to: endOfDay(d),
-      };
+      return { from: startOfDay(d), to: endOfDay(d) };
     }
 
     case "last_7_days":
-      return {
-        from: subDays(now, 7),
-        to: now,
-      };
+      return { from: subDays(now, 7), to: now };
 
     case "last_30_days":
-      return {
-        from: subDays(now, 30),
-        to: now,
-      };
+      return { from: subDays(now, 30), to: now };
 
     case "this_week":
-      return {
-        from: startOfWeek(now, { weekStartsOn: 1 }),
-        to: endOfWeek(now, { weekStartsOn: 1 }),
-      };
+      return { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) };
 
     case "last_week": {
       const s = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
-      return {
-        from: s,
-        to: endOfWeek(s, { weekStartsOn: 1 }),
-      };
+      return { from: s, to: endOfWeek(s, { weekStartsOn: 1 }) };
     }
 
     case "this_month":
-      return {
-        from: startOfMonth(now),
-        to: endOfMonth(now),
-      };
+      return { from: startOfMonth(now), to: endOfMonth(now) };
 
     case "last_month": {
       const s = startOfMonth(subMonths(now, 1));
-      return {
-        from: s,
-        to: endOfMonth(s),
-      };
+      return { from: s, to: endOfMonth(s) };
     }
 
     case "this_year":
-      return {
-        from: startOfYear(now),
-        to: endOfYear(now),
-      };
+      return { from: startOfYear(now), to: endOfYear(now) };
 
     case "last_year": {
       const s = startOfYear(subYears(now, 1));
-      return {
-        from: s,
-        to: endOfYear(s),
-      };
+      return { from: s, to: endOfYear(s) };
     }
 
     default:
