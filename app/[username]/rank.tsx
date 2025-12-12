@@ -7,6 +7,7 @@ import {
   getEmotePageUrl,
   getEmotes,
   getEmoteUrl,
+  getRange,
   normalizeDateRange,
   parseProviders,
   ProviderColor,
@@ -64,7 +65,7 @@ const columns: readonly Column<Emote>[] = [
   { key: "usage_count", name: "Count", resizable: true, sortable: true },
 ];
 
-export type State = {
+type State = {
   rows: Emote[];
   sortColumns: readonly SortColumn[];
   channel: string;
@@ -81,7 +82,7 @@ export type State = {
   isGroupById: boolean;
 };
 
-export type Action =
+type Action =
   | { type: "SET_ROWS"; rows: Emote[] }
   | { type: "SET_SORT"; sort: readonly SortColumn[] }
   | { type: "SET_CHANNEL"; channel: string }
@@ -115,7 +116,7 @@ function reducer(state: State, action: Action): State {
     case "SET_TOTAL_PAGES":
       return { ...newState, totalPages: action.total };
     case "SET_SELECTED_RANGE":
-      return { ...newState, dateRangeSelection: action.range };
+      return { ...newState, dateRangeSelection: action.range, month: action.range?.from ?? state.month };
     case "SET_MONTH":
       return { ...newState, month: action.month };
     case "SET_PROVIDER_FILTER":
@@ -125,7 +126,7 @@ function reducer(state: State, action: Action): State {
     case "SET_OPEN":
       return {
         ...newState,
-        filterDateRange: action.open ? state.filterDateRange : normalizeDateRange(state.dateRangeSelection?.from, state.dateRangeSelection?.to),
+        filterDateRange: action.open ? state.filterDateRange : normalizeDateRange(state.dateRangeSelection?.from ?? null, state.dateRangeSelection?.to ?? null),
         dateRangeSelectionDiaglogOpen: action.open,
       };
     case "SET_ONLY_CURRENT":
@@ -249,8 +250,8 @@ export default function RankPage() {
                 </Button>
               </Dialog.Trigger>
               <Dialog.Content width="fit-content">
-                <Flex align="center" direction={"column"}>
-                  <Dialog.Title>Select Range</Dialog.Title>
+                <Dialog.Title>Select Range</Dialog.Title>
+                <Flex gap={'2'} align="center" className="flex-col! sm:flex-row!">
                   <DayPicker
                     mode="range"
                     reverseYears
@@ -259,12 +260,22 @@ export default function RankPage() {
                     selected={state.dateRangeSelection}
                     onSelect={range => dispatch({ type: "SET_SELECTED_RANGE", range })}
                     captionLayout="dropdown"
-                    timeZone="UTC"
+                    // timeZone="UTC"
                     fixedWeeks
                     disabled={isLoading}
                     showOutsideDays
                   />
-                  <Button onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: undefined })}>Clear</Button>
+                  <Flex wrap={"wrap"} gap={'1'} className="flex-row! sm:flex-col!" align={'end'} >
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_7_days") })}>Last 7 Days</Button>
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_30_days") })}>Last 30 Days</Button>
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_week") })}>This Week</Button>
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_month") })}>This Month</Button>
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("this_year") })}>This Year</Button>
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_week") })}>Last Week</Button>
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_month") })}>Last Month</Button>
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: getRange("last_year") })}>Last Year</Button>
+                    <Button variant="outline" radius='full' onClick={() => dispatch({ type: "SET_SELECTED_RANGE", range: undefined })}>Clear</Button>
+                  </Flex>
                 </Flex>
               </Dialog.Content>
             </Dialog.Root>
@@ -348,7 +359,7 @@ export default function RankPage() {
   );
 }
 
-export function fetchRank(searchParams: ReadonlyURLSearchParams | URLSearchParams, state: State, dispatch: (action: Action) => void) {
+function fetchRank(searchParams: ReadonlyURLSearchParams | URLSearchParams, state: State, dispatch: (action: Action) => void) {
   return async () => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("perPage", state.perPage);
@@ -386,7 +397,8 @@ export function fetchRank(searchParams: ReadonlyURLSearchParams | URLSearchParam
     return data;
   };
 }
-export function getDefaultState(searchParams: ReadonlyURLSearchParams | URLSearchParams, channel?: string): State {
+function getDefaultState(searchParams: ReadonlyURLSearchParams | URLSearchParams, channel?: string): State {
+  const range = getRange("last_7_days")
   const state = {
     rows: [],
     sortColumns: [],
@@ -394,8 +406,8 @@ export function getDefaultState(searchParams: ReadonlyURLSearchParams | URLSearc
     page: searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1,
     perPage: "100",
     totalPages: 1,
-    dateRangeSelection: toDateRange(normalizeDateRange(searchParams.get("from"), searchParams.get("to"))) ?? undefined,
-    filterDateRange: normalizeDateRange(searchParams.get("from"), searchParams.get("to")),
+    dateRangeSelection: range,
+    filterDateRange: normalizeDateRange(range.from, range.to),
     month: undefined,
     providerFilter: searchParams.get("providers")
       ? parseProviders(searchParams.get("providers")!.split(",")).toSorted()

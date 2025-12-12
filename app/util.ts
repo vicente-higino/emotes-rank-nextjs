@@ -1,5 +1,5 @@
 import { DateRange, TZDate } from "react-day-picker";
-
+import { endOfDay, endOfMonth, endOfWeek, endOfYear, startOfDay, startOfMonth, startOfWeek, startOfYear, subDays, subMonths, subWeeks, subYears } from "date-fns";
 export interface EmotesRequest {
   data: Emote[];
   meta: Meta | null;
@@ -111,9 +111,13 @@ export function parseProviders(args: string[]): EmoteProviders[] {
   return providers.length ? providers : [];
 }
 
-export function normalizeDateRange(from?: Date | string | null, to?: Date | string | null) {
-  if (!from || !to) {
-    return { from: null, to: null };
+export function normalizeDateRange(from: Date | string | null, to: Date | string | null, days: number = 7) {
+  if (!from && !to) return { from: null, to: null }
+  if (!from) {
+    from = new TZDate(subDays(new Date(), days));
+  }
+  if (!to) {
+    to = new TZDate(new Date(), "UTC");
   }
   const start = new TZDate(new Date(from), "UTC");
   start.setUTCHours(0, 0, 0, 0);
@@ -124,10 +128,7 @@ export function normalizeDateRange(from?: Date | string | null, to?: Date | stri
   return { from: start.toISOString(), to: end.toISOString() };
 }
 
-export function toDateRange({ from, to }: { from: string | null; to: string | null }): DateRange | undefined {
-  if (!from && !to) {
-    return undefined;
-  }
+export function toDateRange({ from, to }: { from: string | null; to: string | null }): DateRange {
   const range: DateRange = { from: undefined };
   if (from) {
     range.from = new TZDate(from, "UTC");
@@ -136,4 +137,100 @@ export function toDateRange({ from, to }: { from: string | null; to: string | nu
     range.to = new TZDate(to, "UTC");
   }
   return range;
+}
+
+
+export type DateRangeType =
+  | "today"
+  | "yesterday"
+  | "last_7_days"
+  | "last_30_days"
+  | "this_week"
+  | "last_week"
+  | "this_month"
+  | "last_month"
+  | "this_year"
+  | "last_year";
+
+type Range = {
+  from: Date;
+  to: Date;
+}
+
+export function getRange(type: DateRangeType): Range {
+  const now = new TZDate(new Date(), "UTC");
+
+  switch (type) {
+    case "today":
+      return {
+        from: startOfDay(now),
+        to: endOfDay(now),
+      };
+
+    case "yesterday": {
+      const d = subDays(now, 1);
+      return {
+        from: startOfDay(d),
+        to: endOfDay(d),
+      };
+    }
+
+    case "last_7_days":
+      return {
+        from: subDays(now, 7),
+        to: now,
+      };
+
+    case "last_30_days":
+      return {
+        from: subDays(now, 30),
+        to: now,
+      };
+
+    case "this_week":
+      return {
+        from: startOfWeek(now, { weekStartsOn: 1 }),
+        to: endOfWeek(now, { weekStartsOn: 1 }),
+      };
+
+    case "last_week": {
+      const s = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+      return {
+        from: s,
+        to: endOfWeek(s, { weekStartsOn: 1 }),
+      };
+    }
+
+    case "this_month":
+      return {
+        from: startOfMonth(now),
+        to: endOfMonth(now),
+      };
+
+    case "last_month": {
+      const s = startOfMonth(subMonths(now, 1));
+      return {
+        from: s,
+        to: endOfMonth(s),
+      };
+    }
+
+    case "this_year":
+      return {
+        from: startOfYear(now),
+        to: endOfYear(now),
+      };
+
+    case "last_year": {
+      const s = startOfYear(subYears(now, 1));
+      return {
+        from: s,
+        to: endOfYear(s),
+      };
+    }
+
+    default:
+      const exhaustive: never = type;
+      throw new Error(`Unhandled range type: ${exhaustive}`);
+  }
 }
