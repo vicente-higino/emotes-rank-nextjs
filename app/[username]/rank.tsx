@@ -11,22 +11,23 @@ import {
   normalizeDateRange,
   parseProviders,
   ProviderColor,
-  toDateRange,
 } from "@/app/util";
 import {
+  AvatarIcon,
   CalendarIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   DoubleArrowLeftIcon,
   DoubleArrowRightIcon,
   MagnifyingGlassIcon,
+  TrashIcon,
 } from "@radix-ui/react-icons";
-import { Button, CheckboxGroup, Dialog, Flex, Grid, IconButton, Link, Section, Select, Spinner, Switch, Text, TextField } from "@radix-ui/themes";
+import { Button, CheckboxGroup, Dialog, Flex, Grid, IconButton, Link, RadioGroup, Section, Select, Spinner, Switch, Text, TextField } from "@radix-ui/themes";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
 import Fuse from "fuse.js";
 import { ReadonlyURLSearchParams, usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Column, DataGrid, SortColumn } from "react-data-grid";
 import "react-data-grid/lib/styles.css";
 import { type DateRange, DayPicker } from "react-day-picker";
@@ -80,6 +81,8 @@ type State = {
   onlyCurrentEmotes: boolean;
   enableVirt: boolean;
   isGroupById: boolean;
+  users: string[];
+  userScope: "all" | "include" | "exclude";
 };
 
 type Action =
@@ -96,6 +99,7 @@ type Action =
   | { type: "SET_OPEN"; open: boolean }
   | { type: "SET_ONLY_CURRENT"; value: boolean }
   | { type: "SET_IS_GROUP_BY_ID"; value: boolean }
+  | { type: "SET_USERS"; users: string[]; userScope: "all" | "include" | "exclude" }
   | { type: "RESET_CHANGED" };
 
 function reducer(state: State, action: Action): State {
@@ -123,6 +127,8 @@ function reducer(state: State, action: Action): State {
       return { ...newState, providerFilter: action.providers.toSorted() };
     case "SET_IS_GROUP_BY_ID":
       return { ...newState, isGroupById: action.value };
+    case "SET_USERS":
+      return { ...newState, users: action.users.toSorted(), userScope: action.userScope };
     case "SET_OPEN":
       return {
         ...newState,
@@ -167,6 +173,8 @@ export default function RankPage() {
       state.filterDateRange?.from,
       state.filterDateRange?.to,
       state.isGroupById,
+      queryFilter.userScope,
+      ...queryFilter.users,
       queryFilter.onlyCurrentEmotes,
       ...queryFilter.providerFilter,
     ],
@@ -223,7 +231,7 @@ export default function RankPage() {
   return (
     <div className="w-full">
       <Section size={"1"}>
-        <Flex direction={"column"} gap={"3"} align={"center"}>
+        <Flex direction={"column"} gap={"3"} align={"center"} className="w-full ">
           <CheckboxGroup.Root
             disabled={isLoading}
             value={state.providerFilter}
@@ -318,15 +326,19 @@ export default function RankPage() {
               Combine Emotes
             </Text>
           </Flex>
+
           <TextField.Root
             placeholder="Filter emotes…"
+            className="w-full max-w-sm"
             value={emoteNameFilter}
-            onChange={e => setEmoteNameFilter(e.currentTarget.value)}
-            className="w-full max-w-sm">
+            onChange={e => setEmoteNameFilter(e.currentTarget.value)}>
             <TextField.Slot>
               <MagnifyingGlassIcon height="16" width="16" />
             </TextField.Slot>
           </TextField.Root>
+          <UserSelection callback={(users, scope) => { dispatch({ type: 'SET_USERS', users, userScope: scope }) }} />
+
+
           <Flex gap={"5"} align={"center"}>
             <IconButton disabled={state.page === 1 || isLoading} onClick={() => dispatch({ type: "SET_PAGE", page: 1 })} variant="ghost">
               <DoubleArrowLeftIcon />
@@ -399,6 +411,10 @@ function fetchRank(searchParams: ReadonlyURLSearchParams | URLSearchParams, stat
     if (!state.isGroupById) {
       params.set("groupBy", "name");
     }
+    if (state.userScope !== "all" && state.users && state.users.length > 0) {
+      params.set("userScope", state.userScope);
+      params.set("users", state.users.join(","));
+    }
 
     const data = await getEmotes(state.channel, params.toString());
     for (const emote of data.data) {
@@ -436,6 +452,80 @@ function getDefaultState(searchParams: ReadonlyURLSearchParams | URLSearchParams
     onlyCurrentEmotes: !!searchParams.get("onlyCurrentEmotes"),
     isGroupById: true,
     enableVirt: false,
+    users: [],
+    userScope: 'all' as const
   };
   return state;
+}
+
+function UserSelection(props: {
+  callback: (users: string[], scope: "all" | "include" | "exclude") => void
+}) {
+  const [users, setUsers] = useState<string[]>([]);
+  const [text, setText] = useState<string>("");
+  const [scope, setScope] = useState<"all" | "include" | "exclude">("all");
+  const [showError, setShowError] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (users.length == 0 && scope !== 'all') {
+      setScope('all')
+      return;
+    }
+    props.callback(users, scope)
+  }, [users, scope])
+
+  useEffect(() => {
+    const valid = ref.current?.checkValidity() ?? true;
+    setShowError(!valid)
+  }, [text])
+
+
+  return <Flex direction={'column'} gap={'2'} className="w-full max-w-sm">
+    <TextField.Root
+      placeholder="Filter users…"
+      value={text}
+      pattern="[a-zA-Z0-9]\w+"
+      minLength={3}
+      maxLength={25}
+      ref={ref}
+      aria-invalid={showError}
+      onChange={e => {
+        setText(e.currentTarget.value)
+      }}
+      onKeyDown={(e) => {
+        if (e.key == 'Enter') {
+          const set = new Set(users)
+          if (text.length >= 3 && !set.has(text) && e.currentTarget.checkValidity()) {
+            set.add(text);
+            const newUsers = [...set.values()]
+            setUsers(newUsers);
+            if (newUsers.length > 0 && scope == 'all') {
+              setScope("exclude")
+            }
+            setText("");
+            setShowError(false);
+          } else {
+            setShowError(true);
+          }
+        }
+      }}
+    >
+      <TextField.Slot>
+        <AvatarIcon height="16" width="16" />
+      </TextField.Slot>
+    </TextField.Root>
+    {users.length > 0 &&
+      <RadioGroup.Root name="scope" value={scope} onValueChange={(v) => setScope(v as any)} className="flex-row!">
+        <RadioGroup.Item value="all">All</RadioGroup.Item>
+        <RadioGroup.Item value="include">Include</RadioGroup.Item>
+        <RadioGroup.Item value="exclude">Exclude</RadioGroup.Item>
+      </RadioGroup.Root>
+    }
+    <Flex wrap={"wrap"} gap={"1"} className="" align={"end"}>
+      {users.length > 0 && users.map(user => {
+        return <Button key={user} variant="outline" radius="full" onClick={() => setUsers((v) => { return v.filter((u) => u !== user) })}>{user}</Button>
+      })}
+    </Flex>
+  </Flex>
 }

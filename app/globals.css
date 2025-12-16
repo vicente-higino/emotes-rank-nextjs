@@ -29,3 +29,8 @@ body {
 .rdp-root {
   --rdp-accent-background-color: var(--color-blue-950);
 }
+
+div:has(> input[aria-invalid="true"]){
+     outline-color: var(--color-red-600);
+
+}
