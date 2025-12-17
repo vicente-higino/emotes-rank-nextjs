@@ -466,6 +466,7 @@ function UserSelection(props: {
   const [scope, setScope] = useState<"all" | "include" | "exclude">("all");
   const [showError, setShowError] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
+  const textDebounce = useDebounce(text, 250);
 
   useEffect(() => {
     if (users.length == 0 && scope !== 'all') {
@@ -478,7 +479,7 @@ function UserSelection(props: {
   useEffect(() => {
     const valid = ref.current?.checkValidity() ?? true;
     setShowError(!valid)
-  }, [text])
+  }, [textDebounce])
 
 
   return <Flex direction={'column'} gap={'2'} className="w-full max-w-sm">
